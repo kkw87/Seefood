@@ -12,11 +12,46 @@ import Vision
 
 class ViewController: UIViewController {
     
+    // MARK: - Constants
+    struct Constants {
+        static let IsAHotDogMessage = "Hotdog"
+        static let IsNotAHotDogMessage = "Not hotdog"
+    }
+    
     // MARK: - Outlets
     @IBOutlet weak var photoImageView: UIImageView!
+    @IBOutlet weak var hotDogDisplay: UIImageView!
+    @IBOutlet weak var backgroundHotDogView: UIImageView!
     
     // MARK: - Instance Variables
     private let imagePicker = UIImagePickerController()
+    
+    private var currentImage : UIImage? {
+        get {
+            return photoImageView.image
+        } set {
+            photoImageView.image = newValue
+            backgroundHotDogView.isHidden = true
+            imagePicker.dismiss(animated: true, completion: nil)
+        }
+    }
+    
+    private var isAhotDog = false {
+        didSet {
+            if isAhotDog {
+                self.navigationItem.title = Constants.IsAHotDogMessage
+                self.navigationController?.navigationBar.barTintColor = UIColor.green
+                self.navigationController?.navigationBar.isTranslucent = false
+                hotDogDisplay.image = UIImage(named: "hotdog")
+            } else {
+                self.navigationItem.title = Constants.IsNotAHotDogMessage
+                self.navigationController?.navigationBar.barTintColor = UIColor.red
+                self.navigationController?.navigationBar.isTranslucent = false
+                hotDogDisplay.image = UIImage(named: "not-hotdog")
+            }
+        }
+    }
+    
     
     // MARK: - VC Lifecycle
     override func viewDidLoad() {
@@ -27,13 +62,12 @@ class ViewController: UIViewController {
         imagePicker.allowsEditing = false
     }
     
-    
     // MARK: - Camera selection functions
     @IBAction func cameraTapped(_ sender: UIBarButtonItem) {
         present(imagePicker, animated: true, completion: nil)
     }
     
-    func detect(image : CIImage) {
+    private func detect(image : CIImage) {
         
         guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else {
             fatalError("Loading CoreML Model failed")
@@ -47,9 +81,9 @@ class ViewController: UIViewController {
 
             if let firstResult = results.first {
                 if firstResult.identifier.contains("hotdog") {
-                    self.navigationItem.title = "Hot Dog"
+                        self.isAhotDog = true
                 } else {
-                    self.navigationItem.title = "Not hot dog"
+                        self.isAhotDog = false
                 }
             }
             
@@ -80,8 +114,7 @@ extension ViewController : UIImagePickerControllerDelegate, UINavigationControll
         }
         
         detect(image: ciImage)
-        photoImageView.image = selectedImage
-        imagePicker.dismiss(animated: true, completion: nil)
+        currentImage = selectedImage
     }
     
 }
